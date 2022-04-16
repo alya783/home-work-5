@@ -33,4 +33,4 @@ Feature: Login
     Then I get "The user is suspended" message, when login as:
 
       | username                 | password     |
-			| old_walker@jw.com        | password1    |
+      | old_walker@jw.com        | password1    |
