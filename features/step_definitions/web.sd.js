@@ -28,13 +28,13 @@ When(/^I expect element: "([^"]*)" (text|value): "([^"]*)"$/, async function (se
         .toEqual(text)
 });
 
-When('I go to {string} menu item', function (item) {
-    // add implementation here
+When('I go to {string} menu item', async function (item){
+    await $(`//a[text()[contains(.,"${item}")]]`).click();   
 });
-
 
 When('I login as: {string}, {string}', async function (login, password) {
     await Login.login({ username: login, password: password });
+    await $('#user-label').waitForDisplayed({timeoutMsg: 'cannot login into system'});
 });
 
 async function invokeMethodOnPo(action, pretext, po, element, parameters) {
@@ -73,11 +73,28 @@ When(/^I sort table by "([^"]*)"$/, async function (name) {
 
 When(/^I fill form:$/, async function (formYaml) {
     const formData = YAML.parse(formYaml);
-    console.log({ formData });
-    console.log(Subscribe.model)
-    for (const elModel of Subscribe.model) {
-        const el = new elModel.type(elModel.selector);
-        await el.set(formData[elModel.name]);
-        await browser.pause(200);
+    for(const key in formData){
+    	await $(`#${key}`).setValue(formData[key]);
+    }
+    await $('//button[@class="btn btn-primary mt-3"]').click();
+    await $('//*[@id="users-table"]').waitForDisplayed(); 
+});
+
+Then (/^I check new user:$/, async function (table){
+    const rows = table.hashes();
+    const rowSelector = '//div[@class="tabulator-row tabulator-selectable tabulator-row-even"]';
+    for(const row of rows){
+        let info = await $(rowSelector).$(`[tabulator-field = "${row.atribute}"]`).getText();
+    	expect(info).toEqual(row.text);
+    }   
+});
+
+Then(/^I get "([^"]*)" message, when login as:$/, async function (message, table) {
+    const rows = table.hashes()
+    for (const row of rows) {
+        await Login.login({ username: row.username, password: row.password });
+        let  err_message = await $('//*[@id="error"]').getText();
+        expect(err_message).toEqual(message);
     }
 });
+
