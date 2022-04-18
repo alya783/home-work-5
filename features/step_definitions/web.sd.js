@@ -70,31 +70,30 @@ When(/^I sort table by "([^"]*)"$/, async function (name) {
     // console.log(JSON.stringify(data));
 });
 
-
 When(/^I fill form:$/, async function (formYaml) {
-    const formData = YAML.parse(formYaml);
-    for(const key in formData){
-    	await $(`#${key}`).setValue(formData[key]);
+    this.state.formData = YAML.parse(formYaml);
+    for(const key in this.state.formData){
+    	await $(`#${key}`).setValue(this.state.formData[key]);
     }
     await $('//button[@class="btn btn-primary mt-3"]').click();
     await $('//*[@id="users-table"]').waitForDisplayed(); 
 });
 
-Then (/^I check new user:$/, async function (table){
-    const rows = table.hashes();
-    const rowSelector = '//div[@class="tabulator-row tabulator-selectable tabulator-row-even"]';
-    for(const row of rows){
-        let info = await $(rowSelector).$(`[tabulator-field = "${row.atribute}"]`).getText();
-    	expect(info).toEqual(row.text);
-    }   
+Then (/^I check new user$/, async function (){
+    const rowSelector = '//div[@class="tabulator-row tabulator-selectable tabulator-row-even"]'; 
+    for(const key in this.state.formData){
+        if(key === 'password') continue;
+    	let info = await $(rowSelector).$(`[tabulator-field = "${key}"]`).getText();
+    	expect(info).toEqual(this.state.formData[key]);
+    }
 });
 
-Then(/^I get "([^"]*)" message, when login as:$/, async function (message, table) {
-    const rows = table.hashes()
+Then(/^I get error, when login as:$/, async function (table) {
+    const rows = table.hashes();
     for (const row of rows) {
         await Login.login({ username: row.username, password: row.password });
         let  err_message = await $('//*[@id="error"]').getText();
-        expect(err_message).toEqual(message);
+        expect(err_message).toEqual(row.message);
     }
 });
 
